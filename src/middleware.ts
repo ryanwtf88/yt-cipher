@@ -1,4 +1,4 @@
-import { extractPlayerId, generateRequestId, formatLogMessage, measureTimeAsync } from "./utils.ts";
+import { extractPlayerId, generateRequestId, formatLogMessage } from "./utils.ts";
 import { 
     endpointHits, 
     responseCodes, 
@@ -7,10 +7,10 @@ import {
     rateLimitRejections,
     requestSize,
     responseSize,
-    errors,
+    errors as _errors,
     recordError
 } from "./metrics.ts";
-import type { RequestContext, RateLimitConfig, ApiError, LogLevel } from "./types.ts";
+import type { RequestContext, RateLimitConfig } from "./types.ts";
 
 type Next = (ctx: RequestContext) => Promise<Response>;
 
@@ -90,7 +90,7 @@ function getClientIp(req: Request): string {
 // Rate limiting middleware
 function withRateLimit(config: RateLimitConfig = defaultRateLimitConfig) {
     return (handler: Next): Next => {
-        return async (ctx: RequestContext) => {
+        return (ctx: RequestContext) => {
             const clientIp = getClientIp(ctx.req);
             const userAgent = ctx.req.headers.get('User-Agent') || 'unknown';
             const { pathname } = new URL(ctx.req.url);
@@ -342,7 +342,7 @@ function getEndpointType(pathname: string): string {
 // CORS middleware
 function withCORS(handler: Next): Next {
     return async (ctx: RequestContext) => {
-        const { pathname } = new URL(ctx.req.url);
+        const { pathname: _pathname } = new URL(ctx.req.url);
         const method = ctx.req.method;
         
         // Handle preflight OPTIONS requests
@@ -392,7 +392,7 @@ function withSecurityHeaders(handler: Next): Next {
 export function withAuth(handler: Next): Next {
     return async (ctx: RequestContext) => {
         const { pathname } = new URL(ctx.req.url);
-        const method = ctx.req.method;
+        const _method = ctx.req.method;
         
         // Skip auth for health and metrics endpoints
         if (pathname === '/health' || pathname === '/metrics' || pathname === '/status' || pathname === '/api/docs') {
@@ -419,11 +419,11 @@ export function withAuth(handler: Next): Next {
                 try {
                     const encoded = authHeader.substring(6);
                     const decoded = atob(encoded);
-                    const [username, password] = decoded.split(':');
+                    const [_username, password] = decoded.split(':');
                     if (password === apiToken) {
                         isValidAuth = true;
                     }
-                } catch (e) {
+                } catch (_e) {
                     // Invalid base64, continue to error
                 }
             }

@@ -7,11 +7,11 @@ import {
     measureTimeAsync, 
     measureTime,
     formatLogMessage, 
-    createApiError,
+    createApiError as _createApiError,
     extractPlayerId 
 } from "../utils.ts";
 import { stsCache } from "../stsCache.ts";
-import type { RequestContext, StsRequest, StsResponse } from "../types.ts";
+import type { RequestContext, StsRequest } from "../types.ts";
 
 export async function handleGetSts(ctx: RequestContext): Promise<Response> {
     const startTime = performance.now();

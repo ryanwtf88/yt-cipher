@@ -25,5 +25,8 @@ jobs:
       - name: Run linter
         run: deno lint --ignore=index.js
 
+      - name: Type check
+        run: deno check ./src/**/*.ts ./ejs/**/*.ts
+
       - name: Run tests
         run: deno test -A

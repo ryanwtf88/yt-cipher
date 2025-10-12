@@ -3,7 +3,7 @@ import { validateAndNormalizePlayerUrl } from "./utils.ts";
 
 type Next = (ctx: RequestContext) => Promise<Response>;
 type ValidationSchema = {
-    [key: string]: (value: any) => boolean;
+    [key: string]: (value: unknown) => boolean;
 };
 
 const signatureRequestSchema: ValidationSchema = {
@@ -19,10 +19,10 @@ const resolveUrlRequestSchema: ValidationSchema = {
     stream_url: (val) => typeof val === 'string',
 };
 
-function validateObject(obj: any, schema: ValidationSchema): { isValid: boolean, errors: string[] } {
+function validateObject(obj: unknown, schema: ValidationSchema): { isValid: boolean, errors: string[] } {
     const errors: string[] = [];
     for (const key in schema) {
-        if (!obj.hasOwnProperty(key) || !schema[key](obj[key])) {
+        if (!Object.prototype.hasOwnProperty.call(obj, key) || !schema[key](obj[key])) {
             errors.push(`'${key}' is missing or invalid`);
         }
     }
@@ -30,7 +30,7 @@ function validateObject(obj: any, schema: ValidationSchema): { isValid: boolean,
 }
 
 export function withValidation(handler: Next): Next {
-    return async (ctx: RequestContext) => {
+    return (ctx: RequestContext) => {
         const { pathname } = new URL(ctx.req.url);
 
         let schema: ValidationSchema;
@@ -59,7 +59,7 @@ export function withValidation(handler: Next): Next {
             if ('player_url' in body) {
                 const normalizedUrl = validateAndNormalizePlayerUrl(body.player_url);
                 // mutate the context with the normalized URL
-                (ctx.body as any).player_url = normalizedUrl;
+                (ctx.body as Record<string, unknown>).player_url = normalizedUrl;
             }
         } catch (e) {
             return new Response(JSON.stringify({ error: (e as Error).message }), {

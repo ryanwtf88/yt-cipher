@@ -1,4 +1,4 @@
-import type { Input as MainInput, Output as MainOutput } from "../ejs/src/yt/solver/main.ts";
+import type { Input as _MainInput, Output as _MainOutput } from "../ejs/src/yt/solver/main.ts";
 
 // Core solver interface
 export interface Solvers {
@@ -106,6 +106,7 @@ export interface GetPlayerInfoResponse {
 
 export interface CacheStatsRequest {
     // No specific request body needed for GET request
+    [key: string]: never;
 }
 
 export interface CacheStatsResponse {
@@ -138,12 +139,12 @@ export interface ClearCacheResponse {
 export interface ApiError {
     error: string;
     code: string;
-    details?: Record<string, any>;
+    details?: Record<string, unknown>;
     timestamp: string;
     request_id?: string;
 }
 
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
     success: boolean;
     data?: T;
     error?: ApiError;
@@ -162,7 +163,7 @@ export interface WorkerWithStatus extends Worker {
 export interface Task {
     data: string;
     resolve: (output: string) => void;
-    reject: (error: any) => void;
+    reject: (error: unknown) => void;
 }
 
 // Rate limiting
@@ -270,7 +271,7 @@ export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 export interface WorkerEvent {
     type: 'task_complete' | 'task_error' | 'worker_ready' | 'worker_error';
     taskId?: string;
-    data?: any;
+    data?: unknown;
     error?: string;
     timestamp: number;
 }

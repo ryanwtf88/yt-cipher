@@ -3,7 +3,7 @@ import {
     cacheHits, 
     cacheMisses, 
     cacheOperations, 
-    cacheLatency,
+    cacheLatency as _cacheLatency,
     recordCacheOperation
 } from "./metrics.ts";
 import { LRU } from "https://deno.land/x/lru@1.0.2/mod.ts";
@@ -170,7 +170,7 @@ export class InstrumentedLRU<T> extends LRU<T> {
             hits: this.hits,
             misses: this.misses,
             size: this.size,
-            maxSize: (this as any).maxSize,
+            maxSize: (this as Record<string, unknown>).maxSize as number,
             hitRate: total > 0 ? (this.hits / total) * 100 : 0
         };
     }

@@ -1,4 +1,4 @@
-import { type ESTree } from "npm:meriyah";
+import { type ESTree } from "npm:meriyah@6.1.4";
 import { matchesStructure } from "../../utils.ts";
 import { type DeepPartial } from "../../types.ts";
 

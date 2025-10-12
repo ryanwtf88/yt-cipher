@@ -3,7 +3,7 @@ import type { ApiError, LogLevel } from "./types.ts";
 // Constants
 const ALLOWED_HOSTNAMES = ["youtube.com", "www.youtube.com", "m.youtube.com"];
 const YOUTUBE_PLAYER_PATTERN = /\/s\/player\/([^\/]+)/;
-const PLAYER_ID_PATTERN = /\/player\/([^\/\?]+)/;
+const _PLAYER_ID_PATTERN = /\/player\/([^\/\?]+)/;
 
 // URL validation and normalization
 export function validateAndNormalizePlayerUrl(playerUrl: string): string {
@@ -63,7 +63,7 @@ export function extractPlayerId(playerUrl: string): string {
             // Clean up any query parameters or fragments
             return playerId.split('?')[0].split('#')[0];
         }
-    } catch (e) {
+    } catch (_e) {
         // Fallback for relative paths
         const match = playerUrl.match(YOUTUBE_PLAYER_PATTERN);
         if (match && match[1]) {
@@ -105,7 +105,8 @@ export function sanitizeString(input: string, maxLength: number = 1000): string 
     return input
         .trim()
         .slice(0, maxLength)
-        .replace(/[\x00-\x1F\x7F-\x9F]/g, ''); // Remove control characters
+        // deno-lint-ignore no-control-regex
+        .replace(/[\u0000-\u001F\u007F-\u009F]/g, ''); // Remove control characters
 }
 
 export function generateRequestId(): string {
@@ -120,7 +121,7 @@ export function generateTaskId(): string {
 export function createApiError(
     message: string, 
     code: string, 
-    details?: Record<string, any>,
+    details?: Record<string, unknown>,
     requestId?: string
 ): ApiError {
     return {
@@ -132,14 +133,16 @@ export function createApiError(
     };
 }
 
-export function isRetryableError(error: any): boolean {
+export function isRetryableError(error: unknown): boolean {
+    if (!error || typeof error !== 'object') return false;
+    const err = error as { code?: string; message?: string };
     if (!error) return false;
     
     const retryableCodes = ['ECONNRESET', 'ENOTFOUND', 'ECONNREFUSED', 'ETIMEDOUT'];
     const retryableMessages = ['timeout', 'network', 'connection', 'rate limit'];
     
-    return retryableCodes.some(code => error.code === code) ||
-           retryableMessages.some(msg => error.message?.toLowerCase().includes(msg));
+    return retryableCodes.some(code => err.code === code) ||
+           retryableMessages.some(msg => err.message?.toLowerCase().includes(msg));
 }
 
 // Performance utilities
@@ -158,7 +161,7 @@ export async function measureTimeAsync<T>(fn: () => Promise<T>): Promise<{ resul
 }
 
 // Validation utilities
-export function validateRequiredFields(obj: Record<string, any>, requiredFields: string[]): string[] {
+export function validateRequiredFields(obj: Record<string, unknown>, requiredFields: string[]): string[] {
     const errors: string[] = [];
     
     for (const field of requiredFields) {
@@ -187,7 +190,7 @@ export function validateStringLength(str: string, min: number, max: number, fiel
 }
 
 // Logging utilities
-export function formatLogMessage(level: LogLevel, message: string, meta?: Record<string, any>): string {
+export function formatLogMessage(level: LogLevel, message: string, meta?: Record<string, unknown>): string {
     const timestamp = new Date().toISOString();
     const base = `[${timestamp}] [${level.toUpperCase()}] ${message}`;
     
@@ -209,7 +212,7 @@ export function getMemoryUsage(): { used: number; total: number; percentage: num
 }
 
 // Rate limiting utilities
-export function calculateRetryAfter(windowMs: number, resetTime: number): number {
+export function calculateRetryAfter(_windowMs: number, resetTime: number): number {
     const now = Date.now();
     const timeUntilReset = resetTime - now;
     return Math.max(0, Math.ceil(timeUntilReset / 1000));
@@ -284,7 +287,7 @@ export function deepClone<T>(obj: T): T {
     
     const cloned = {} as T;
     for (const key in obj) {
-        if (obj.hasOwnProperty(key)) {
+        if (Object.prototype.hasOwnProperty.call(obj, key)) {
             cloned[key] = deepClone(obj[key]);
         }
     }
