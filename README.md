@@ -5,10 +5,10 @@ A high-performance YouTube signature decryption service built with Deno, designe
 [![Deno](https://img.shields.io/badge/Deno-2.5.4-blue?logo=deno)](https://deno.land/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9.2-blue?logo=typescript)](https://www.typescriptlang.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/Version-0.0.1-blue.svg)](https://github.com/ryanisnomore/yt-cipher)
-[![Author](https://img.shields.io/badge/Author-RY4N-orange.svg)](https://github.com/ryanisnomore/yt-cipher)
-[![Stars](https://img.shields.io/github/stars/ryanisnomore/yt-cipher?style=social)](https://github.com/ryanisnomore/yt-cipher)
-[![Forks](https://img.shields.io/github/forks/ryanisnomore/yt-cipher?style=social)](https://github.com/ryanisnomore/yt-cipher)
+[![Version](https://img.shields.io/badge/Version-0.0.1-blue.svg)](https://github.com/ryanwtf88/yt-cipher)
+[![Author](https://img.shields.io/badge/Author-RY4N-orange.svg)](https://github.com/ryanwtf88/yt-cipher)
+[![Stars](https://img.shields.io/github/stars/ryanwtf88/yt-cipher?style=social)](https://github.com/ryanwtf88/yt-cipher)
+[![Forks](https://img.shields.io/github/forks/ryanwtf88/yt-cipher?style=social)](https://github.com/ryanwtf88/yt-cipher)
 
 
 ## Features
@@ -34,7 +34,7 @@ A high-performance YouTube signature decryption service built with Deno, designe
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/ryanisnomore/yt-cipher.git
+   git clone https://github.com/ryanwtf88/yt-cipher.git
    cd yt-cipher
    ```
 
@@ -313,7 +313,7 @@ The service provides real-time monitoring through:
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/ryanisnomore/yt-cipher.git
+   git clone https://github.com/ryanwtf88/yt-cipher.git
    cd yt-cipher
    ```
 
@@ -355,10 +355,10 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Support
 
-- **Issues**: [GitHub Issues](https://github.com/ryanisnomore/yt-cipher/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/ryanisnomore/yt-cipher/discussions)
+- **Issues**: [GitHub Issues](https://github.com/ryanwtf88/yt-cipher/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/ryanwtf88/yt-cipher/discussions)
 - **Documentation**: [API Docs](http://localhost:3000/api/docs) (when running)
 
 ---
 
-**Made with ❤️ by [RY4N](https://github.com/ryanisnomore)**
+**Made with ❤️ by [RY4N](https://github.com/ryanwtf88)**
