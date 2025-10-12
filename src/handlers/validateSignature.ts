@@ -1,7 +1,7 @@
 import type { RequestContext, ValidateSignatureRequest } from "../types.ts";
 import { createApiError, formatLogMessage } from "../utils.ts";
 
-export async function handleValidateSignature(ctx: RequestContext): Promise<Response> {
+export function handleValidateSignature(ctx: RequestContext): Response {
     const { body, requestId, startTime } = ctx;
     
     try {

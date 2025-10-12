@@ -1,4 +1,4 @@
-import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
+// import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { initializeWorkers } from "./src/workerPool.ts";
 import { initializeCache } from "./src/playerCache.ts";
 import { handleDecryptSignature } from "./src/handlers/decryptSignature.ts";
@@ -57,16 +57,16 @@ const config: ServerConfig = {
         maxRetries: parseInt(Deno.env.get("WORKER_MAX_RETRIES") || "5", 10)
     },
     logging: {
-        level: (Deno.env.get("LOG_LEVEL") as any) || "warn", 
-        format: (Deno.env.get("LOG_FORMAT") as any) || "text"
+        level: (Deno.env.get("LOG_LEVEL") as "debug" | "info" | "warn" | "error") || "warn", 
+        format: (Deno.env.get("LOG_FORMAT") as "json" | "text") || "text"
     }
 };
 
 // Server state
 const serverStartTime = Date.now();
 let isShuttingDown = false;
-let requestCount = 0;
-let lastHealthCheck = Date.now();
+const _requestCount = 0;
+const _lastHealthCheck = Date.now();
 
 // Real-time data collection
 const realTimeData = {
@@ -79,7 +79,7 @@ const realTimeData = {
 };
 
 // Enhanced JSON response helper
-function createJsonResponse(data: any, status: number = 200, headers: Record<string, string> = {}): Response {
+function createJsonResponse(data: unknown, status: number = 200, headers: Record<string, string> = {}): Response {
     const defaultHeaders = {
         "Content-Type": "application/json",
         "Cache-Control": "no-cache, no-store, must-revalidate",
@@ -115,7 +115,7 @@ function updateRealTimeData(responseTime: number, isError: boolean = false) {
 // Enhanced request handler
 async function baseHandler(req: Request): Promise<Response> {
     const requestId = generateRequestId();
-    const { pathname, searchParams } = new URL(req.url);
+    const { pathname, searchParams: _searchParams } = new URL(req.url);
     const method = req.method;
     const userAgent = req.headers.get('User-Agent') || 'unknown';
     const clientIp = req.headers.get('X-Forwarded-For') || 
@@ -269,7 +269,7 @@ async function baseHandler(req: Request): Promise<Response> {
         }
 
         // Parse request body for POST requests
-        let body: any = {} as any;
+        let body: ApiRequest = {} as ApiRequest;
         if (method === "POST") {
             try {
                 const contentType = req.headers.get('Content-Type') || '';
@@ -465,7 +465,7 @@ yt_cipher_uptime_seconds ${(Date.now() - serverStartTime) / 1000}
 }
 
 // Health check endpoint handler with real-time data
-async function handleHealth(requestId: string): Promise<Response> {
+function handleHealth(requestId: string): Promise<Response> {
     try {
         const uptime = Date.now() - serverStartTime;
         const memory = getMemoryUsage();
@@ -542,7 +542,7 @@ async function handleHealth(requestId: string): Promise<Response> {
 }
 
 // Status endpoint handler with real-time data
-async function handleStatus(requestId: string): Promise<Response> {
+function handleStatus(requestId: string): Promise<Response> {
     try {
         const uptime = Date.now() - serverStartTime;
         const memory = getMemoryUsage();
@@ -1222,7 +1222,7 @@ function handleApiDocs(requestId: string): Response {
 }
 
 // Graceful shutdown handler
-async function gracefulShutdown(signal: string) {
+function gracefulShutdown(signal: string) {
     if (isShuttingDown) {
         console.log(formatLogMessage('warn', 'Shutdown already in progress', { signal }));
         return;

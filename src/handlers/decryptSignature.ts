@@ -1,5 +1,5 @@
 import { getSolvers } from "../solver.ts";
-import type { RequestContext, SignatureRequest, SignatureResponse } from "../types.ts";
+import type { RequestContext, SignatureRequest } from "../types.ts";
 import { createApiError, formatLogMessage } from "../utils.ts";
 
 export async function handleDecryptSignature(ctx: RequestContext): Promise<Response> {

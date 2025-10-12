@@ -1,5 +1,5 @@
 import { getSolvers } from "../solver.ts";
-import type { RequestContext, ResolveUrlRequest, ResolveUrlResponse } from "../types.ts";
+import type { RequestContext, ResolveUrlRequest } from "../types.ts";
 import { createApiError, formatLogMessage } from "../utils.ts";
 
 export async function handleResolveUrl(ctx: RequestContext): Promise<Response> {

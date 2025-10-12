@@ -228,7 +228,7 @@ class MetricsCollector {
 
     getMetricsData(): MetricsData {
         const now = Date.now();
-        const uptimeMs = now - this.startTime;
+        const _uptimeMs = now - this.startTime;
         
         return {
             requests: {
@@ -254,23 +254,23 @@ class MetricsCollector {
         };
     }
 
-    private getCounterValue(counter: any, labels?: Record<string, string>): number {
+    private getCounterValue(_counter: Counter, _labels?: Record<string, string>): number {
         // This is a simplified implementation
         // In a real implementation, you'd need to access the actual counter values
         return 0;
     }
 
-    private getGaugeValue(gauge: any, labels?: Record<string, string>): number {
+    private getGaugeValue(_gauge: Gauge, _labels?: Record<string, string>): number {
         // This is a simplified implementation
         return 0;
     }
 
-    private getHistogramAverage(histogram: any): number {
+    private getHistogramAverage(_histogram: Histogram): number {
         // This is a simplified implementation
         return 0;
     }
 
-    private getHistogramPercentile(histogram: any, percentile: number): number {
+    private getHistogramPercentile(_histogram: Histogram, _percentile: number): number {
         // This is a simplified implementation
         return 0;
     }
@@ -292,15 +292,15 @@ class MetricsCollector {
 export const metricsCollector = new MetricsCollector();
 
 // Utility functions for metrics
-export function incrementCounter(counter: any, labels: Record<string, string>, value: number = 1) {
+export function incrementCounter(counter: Counter, labels: Record<string, string>, value: number = 1) {
     counter.labels(labels).inc(value);
 }
 
-export function setGauge(gauge: any, labels: Record<string, string>, value: number) {
+export function setGauge(gauge: Gauge, labels: Record<string, string>, value: number) {
     gauge.labels(labels).set(value);
 }
 
-export function observeHistogram(histogram: any, labels: Record<string, string>, value: number) {
+export function observeHistogram(histogram: Histogram, labels: Record<string, string>, value: number) {
     histogram.labels(labels).observe(value);
 }
 

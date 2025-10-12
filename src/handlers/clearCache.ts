@@ -1,7 +1,7 @@
 import type { RequestContext, ClearCacheRequest } from "../types.ts";
 import { createApiError, formatLogMessage } from "../utils.ts";
 
-export async function handleClearCache(ctx: RequestContext): Promise<Response> {
+export function handleClearCache(ctx: RequestContext): Response {
     const { body, requestId, startTime } = ctx;
     
     try {
@@ -53,7 +53,7 @@ export async function handleClearCache(ctx: RequestContext): Promise<Response> {
                     clearedCaches.push('sts_cache');
                     // await stsCache.clear();
                     break;
-                default:
+                default: {
                     const error = createApiError(
                         'Invalid cache type. Must be one of: all, player, solver, preprocessed, sts',
                         'INVALID_REQUEST',
@@ -72,6 +72,7 @@ export async function handleClearCache(ctx: RequestContext): Promise<Response> {
                             "X-Request-ID": requestId
                         } 
                     });
+                }
             }
             
             console.log(formatLogMessage('info', 'Specific cache cleared', {

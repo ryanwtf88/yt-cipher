@@ -1,5 +1,5 @@
-import { type ESTree, parse } from "npm:meriyah";
-import { generate } from "npm:astring";
+import { type ESTree, parse } from "npm:meriyah@6.1.4";
+import { generate } from "npm:astring@1.8.6";
 import { extract as extractSig } from "./sig.ts";
 import { extract as extractN } from "./n.ts";
 import { setupNodes } from "./setup.ts";

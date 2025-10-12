@@ -1,7 +1,7 @@
 import type { RequestContext, BatchDecryptRequest } from "../types.ts";
 import { createApiError, formatLogMessage } from "../utils.ts";
 
-export async function handleBatchDecrypt(ctx: RequestContext): Promise<Response> {
+export function handleBatchDecrypt(ctx: RequestContext): Response {
     const { body, requestId, startTime } = ctx;
     
     try {
