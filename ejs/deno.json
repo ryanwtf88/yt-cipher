@@ -6,5 +6,9 @@
   },
   "compilerOptions": {
     "lib": ["deno.window", "deno.ns", "deno.unstable"]
+  },
+  "tasks": {
+    "test": "deno test -A",
+    "lint": "deno lint --ignore=index.js"
   }
 }
