@@ -23,7 +23,7 @@ export async function getIO(): Promise<IO> {
 }
 
 async function _getIO(): Promise<IO> {
-  if ((globalThis as any).process?.release?.name === "node") {
+  if ((globalThis as { process?: { release?: { name?: string } } }).process?.release?.name === "node") {
     // Assume node compatibility
     const { access, readFile } = await import("node:fs/promises");
     const { deepStrictEqual } = await import("node:assert");

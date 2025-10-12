@@ -1,11 +1,10 @@
 {
   "nodeModulesDir": "auto",
   "imports": {
-    "npm:astring@1.8.6": "npm:astring@1.8.6",
-    "npm:meriyah@6.1.4": "npm:meriyah@6.1.4"
+    "meriyah": "npm:meriyah@6.1.4",
+    "astring": "npm:astring@1.8.6"
   },
   "compilerOptions": {
-    "allowJs": true,
     "lib": ["deno.window", "deno.ns", "deno.unstable"]
   }
 }
