@@ -23,7 +23,7 @@ export async function getIO(): Promise<IO> {
 }
 
 async function _getIO(): Promise<IO> {
-  if (globalThis.process?.release?.name === "node") {
+  if ((globalThis as any).process?.release?.name === "node") {
     // Assume node compatibility
     const { access, readFile } = await import("node:fs/promises");
     const { deepStrictEqual } = await import("node:assert");
@@ -50,11 +50,11 @@ async function _getIO(): Promise<IO> {
       };
     } else {
       writeFile = (await import("node:fs/promises"))["writeFile"];
-      const { suite, test: subtest } = await import("node:test");
+      const { describe, it } = await import("node:test");
       test = (name, func) => {
-        suite(name, () => {
+        describe(name, () => {
           return func(assert, async (name, func): Promise<void> => {
-            await subtest(name, async () => {
+            await it(name, async () => {
               await func(assert);
             });
           });
