@@ -6,7 +6,7 @@ import {
     cacheLatency as _cacheLatency,
     recordCacheOperation
 } from "./metrics.ts";
-import { LRU } from "https://deno.land/x/lru@1.0.2/mod.ts";
+import { LRU } from "lru";
 import type { CacheStats, CacheConfig } from "./types.ts";
 import { measureTime, formatLogMessage } from "./utils.ts";
 

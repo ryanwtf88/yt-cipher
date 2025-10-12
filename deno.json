@@ -2,7 +2,10 @@
   "nodeModulesDir": "auto",
   "imports": {
     "meriyah": "npm:meriyah@6.1.4",
-    "astring": "npm:astring@1.8.6"
+    "astring": "npm:astring@1.8.6",
+    "std/": "https://deno.land/std@0.224.0/",
+    "ts_prometheus": "https://deno.land/x/ts_prometheus/mod.ts",
+    "lru": "https://deno.land/x/lru@1.0.2/mod.ts"
   },
   "compilerOptions": {
     "lib": ["deno.window", "deno.ns", "deno.unstable"]

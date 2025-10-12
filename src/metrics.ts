@@ -3,7 +3,7 @@ import {
     Gauge,
     Histogram,
     Registry,
-} from "https://deno.land/x/ts_prometheus/mod.ts";
+} from "ts_prometheus";
 import type { CacheStats, MetricsData, LogLevel } from "./types.ts";
 
 export const registry = new Registry();

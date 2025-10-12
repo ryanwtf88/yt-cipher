@@ -1,5 +1,5 @@
-import { walk } from "https://deno.land/std@0.224.0/fs/walk.ts";
-import { join } from "https://deno.land/std@0.224.0/path/mod.ts";
+import { walk } from "std/fs/walk.ts";
+import { join } from "std/path/mod.ts";
 
 const EJS_SRC_DIR = join(Deno.cwd(), "ejs/src");
 
