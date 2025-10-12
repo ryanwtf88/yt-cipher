@@ -1,0 +1,57 @@
+version: '3.8'
+
+services:
+  yt-cipher:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: yt-cipher
+    ports:
+      - "3000:3000"
+    environment:
+      - SERVER_PORT=3000
+      - SERVER_HOST=0.0.0.0
+      - API_TOKEN=${API_TOKEN:-YOUR_API_TOKEN}
+      - WORKER_CONCURRENCY=16
+      - WORKER_TASK_TIMEOUT=60000
+      - WORKER_MAX_RETRIES=5
+      - RATE_LIMIT_WINDOW_MS=60000
+      - RATE_LIMIT_MAX_REQUESTS=999999999
+      - LOG_LEVEL=warn
+      - LOG_FORMAT=text
+      - PLAYER_CACHE_SIZE=10000
+      - PLAYER_CACHE_TTL=7200000
+      - SOLVER_CACHE_SIZE=5000
+      - SOLVER_CACHE_TTL=7200000
+      - PREPROCESSED_CACHE_SIZE=15000
+      - PREPROCESSED_CACHE_TTL=14400000
+      - STS_CACHE_SIZE=10000
+      - STS_CACHE_TTL=3600000
+    volumes:
+      - player_cache:/app/player_cache
+      - deno_cache:/app/.deno
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "deno", "run", "--allow-net", "--allow-read", "--allow-write", "--allow-env", "-A", "-e", "try { const res = await fetch('http://localhost:3000/health'); if (res.ok) { const data = await res.json(); if (data.status === 'healthy' || data.status === 'degraded') { Deno.exit(0); } } } catch { } Deno.exit(1);"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '1.0'
+        reservations:
+          memory: 256M
+          cpus: '0.5'
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.yt-cipher.rule=Host(`yt-cipher.localhost`)"
+      - "traefik.http.services.yt-cipher.loadbalancer.server.port=3000"
+
+volumes:
+  player_cache:
+    driver: local
+  deno_cache:
+    driver: local
