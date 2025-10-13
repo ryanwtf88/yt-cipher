@@ -336,15 +336,20 @@ LOG_LEVEL=debug deno run --allow-net --allow-read --allow-write --allow-env --al
 
 ## Contributing
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on how to get started, report issues, and submit pull requests.
+
+## Security
+
+If you discover a security vulnerability, please refer to our [SECURITY.md](SECURITY.md) for responsible disclosure guidelines and contact information.
+
+## Code of Conduct
+
+By participating in this project, you agree to abide by our [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md). Let's foster a positive and inclusive environment together.
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the [MIT License](LICENSE).
+
 
 ## Acknowledgments
 
