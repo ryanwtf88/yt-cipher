@@ -1,4 +1,3 @@
-// import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { initializeWorkers } from "./src/workerPool.ts";
 import { initializeCache } from "./src/playerCache.ts";
 import { handleDecryptSignature } from "./src/handlers/decryptSignature.ts";
@@ -62,13 +61,9 @@ const config: ServerConfig = {
     }
 };
 
-// Server state
 const serverStartTime = Date.now();
 let isShuttingDown = false;
-const _requestCount = 0;
-const _lastHealthCheck = Date.now();
 
-// Real-time data collection
 const realTimeData = {
     activeConnections: 0,
     totalRequests: 0,
@@ -78,7 +73,6 @@ const realTimeData = {
     responseTimes: [] as number[]
 };
 
-// Enhanced JSON response helper
 function createJsonResponse(data: unknown, status: number = 200, headers: Record<string, string> = {}): Response {
     const defaultHeaders = {
         "Content-Type": "application/json",
@@ -94,13 +88,11 @@ function createJsonResponse(data: unknown, status: number = 200, headers: Record
     });
 }
 
-// Real-time data update function
 function updateRealTimeData(responseTime: number, isError: boolean = false) {
     realTimeData.totalRequests++;
     realTimeData.lastRequestTime = Date.now();
     realTimeData.responseTimes.push(responseTime);
     
-    // Keep only last 100 response times for average calculation
     if (realTimeData.responseTimes.length > 100) {
         realTimeData.responseTimes = realTimeData.responseTimes.slice(-100);
     }
@@ -112,10 +104,9 @@ function updateRealTimeData(responseTime: number, isError: boolean = false) {
     }
 }
 
-// Enhanced request handler
 async function baseHandler(req: Request): Promise<Response> {
     const requestId = generateRequestId();
-    const { pathname, searchParams: _searchParams } = new URL(req.url);
+    const { pathname } = new URL(req.url);
     const method = req.method;
     const userAgent = req.headers.get('User-Agent') || 'unknown';
     const clientIp = req.headers.get('X-Forwarded-For') || 
@@ -124,10 +115,8 @@ async function baseHandler(req: Request): Promise<Response> {
                     'unknown';
     const startTime = Date.now();
 
-    // Update real-time data
     realTimeData.activeConnections++;
 
-    // Log incoming request
     console.log(formatLogMessage('info', 'Incoming request', {
         requestId,
         method,
@@ -137,7 +126,6 @@ async function baseHandler(req: Request): Promise<Response> {
     }));
 
     try {
-        // Handle different endpoints
         if (method === "GET" && pathname === "/") {
             const response = handleRoot(requestId);
             updateRealTimeData(Date.now() - startTime);
@@ -166,13 +154,6 @@ async function baseHandler(req: Request): Promise<Response> {
             return response;
         }
 
-        if (pathname === "/api/docs") {
-            const response = handleApiDocs(requestId);
-            updateRealTimeData(Date.now() - startTime);
-            realTimeData.activeConnections--;
-            return response;
-        }
-
         if (pathname === "/info") {
             const response = handleServerInfo(requestId);
             updateRealTimeData(Date.now() - startTime);
@@ -180,19 +161,16 @@ async function baseHandler(req: Request): Promise<Response> {
             return response;
         }
 
-        // API authentication - only require auth for API endpoints, not info endpoints
         if (pathname.startsWith('/decrypt_signature') || pathname.startsWith('/get_sts') || 
             pathname.startsWith('/resolve_url') || pathname.startsWith('/batch_decrypt') || 
             pathname.startsWith('/validate_signature') || pathname.startsWith('/clear_cache')) {
             
             const API_TOKEN = config.apiToken;
             
-            // Skip authentication if no token is configured (development mode)
             if (!API_TOKEN || API_TOKEN === "" || API_TOKEN === "YOUR_API_TOKEN") {
-                console.log(formatLogMessage('warn', 'API authentication disabled - no valid token configured', {
+                console.log(formatLogMessage('warn', 'API authentication disabled', {
                     requestId,
-                    pathname,
-                    configuredToken: API_TOKEN
+                    pathname
                 }));
             } else {
                 const authHeader = req.headers.get("authorization");
@@ -200,13 +178,6 @@ async function baseHandler(req: Request): Promise<Response> {
                 
                 if (!isValidAuth) {
                     const error = authHeader ? "Invalid API token" : "Missing API token";
-                    
-                    console.log(formatLogMessage('warn', 'API authentication failed', {
-                        requestId,
-                        pathname,
-                        hasAuthHeader: !!authHeader,
-                        authHeaderLength: authHeader ? authHeader.length : 0
-                    }));
                     
                     updateRealTimeData(Date.now() - startTime, true);
                     realTimeData.activeConnections--;
@@ -225,7 +196,6 @@ async function baseHandler(req: Request): Promise<Response> {
             }
         }
 
-        // Route to appropriate handler
         let handler: ((ctx: RequestContext) => Promise<Response>) | null = null;
 
         switch (pathname) {
@@ -268,7 +238,6 @@ async function baseHandler(req: Request): Promise<Response> {
                 });
         }
 
-        // Parse request body for POST requests
         let body: ApiRequest = {} as ApiRequest;
         if (method === "POST") {
             try {
@@ -321,7 +290,6 @@ async function baseHandler(req: Request): Promise<Response> {
             }
         }
 
-        // Create request context
         const ctx: RequestContext = { 
             req, 
             body, 
@@ -331,7 +299,6 @@ async function baseHandler(req: Request): Promise<Response> {
             userAgent
         };
 
-        // Apply middleware
         const composedHandler = composeMiddleware(
             withValidation(handler),
             {
@@ -382,62 +349,460 @@ async function baseHandler(req: Request): Promise<Response> {
     }
 }
 
-// Root endpoint handler with real-time data
-function handleRoot(requestId: string): Response {
-    const uptime = Date.now() - serverStartTime;
-    const memory = getMemoryUsage();
+function handleRoot(_requestId: string): Response {
+    const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YT-Cipher | Susanoo Protocol</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary: #8B00FF;
+            --secondary: #6A0DAD;
+            --accent: #9D4EDD;
+            --dark: #0a0a0a;
+        }
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: 'Rajdhani', sans-serif;
+            background: var(--dark);
+            color: #fff;
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            pointer-events: none;
+        }
+        .particle {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: var(--primary);
+            border-radius: 50%;
+            opacity: 0;
+            animation: particleFloat 15s infinite;
+        }
+        @keyframes particleFloat {
+            0% { transform: translateY(100vh) translateX(0) rotate(0deg); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(-100vh) translateX(100px) rotate(360deg); opacity: 0; }
+        }
+        .header {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 40px 20px;
+            position: relative;
+        }
+        .logo-3d {
+            font-size: 120px;
+            font-weight: 900;
+            font-family: 'Orbitron', sans-serif;
+            letter-spacing: 15px;
+            background: linear-gradient(45deg, #8B00FF, #6A0DAD, #9D4EDD, #8B00FF);
+            background-size: 300% 300%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: gradientFlow 4s ease infinite, float3d 6s ease-in-out infinite;
+            text-shadow: 0 0 40px rgba(139, 0, 255, 0.8), 0 0 80px rgba(139, 0, 255, 0.6);
+            transform-style: preserve-3d;
+            filter: drop-shadow(0 10px 20px rgba(139, 0, 255, 0.4));
+            margin-bottom: 20px;
+        }
+        @keyframes gradientFlow {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+        @keyframes float3d {
+            0%, 100% { transform: translateY(0) rotateX(0deg) rotateY(0deg); }
+            25% { transform: translateY(-30px) rotateX(8deg) rotateY(-8deg); }
+            75% { transform: translateY(-30px) rotateX(-8deg) rotateY(8deg); }
+        }
+        .subtitle {
+            font-size: 32px;
+            color: var(--accent);
+            letter-spacing: 8px;
+            font-weight: 700;
+            margin-bottom: 40px;
+            animation: pulse 2s ease-in-out infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.85; transform: scale(1.02); }
+        }
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            max-width: 1200px;
+            width: 100%;
+            margin: 40px 0;
+        }
+        .stat-card {
+            background: rgba(139, 0, 255, 0.05);
+            border: 1px solid var(--primary);
+            border-radius: 15px;
+            padding: 30px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s;
+            text-align: center;
+        }
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(139, 0, 255, 0.3);
+            border-color: var(--accent);
+        }
+        .stat-value {
+            font-size: 48px;
+            font-weight: 900;
+            color: var(--primary);
+            font-family: 'Orbitron', sans-serif;
+            margin-bottom: 10px;
+        }
+        .stat-label {
+            font-size: 18px;
+            color: var(--accent);
+            font-weight: 600;
+        }
+        .section {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 80px 40px;
+        }
+        .section-title {
+            font-size: 56px;
+            color: var(--primary);
+            text-align: center;
+            margin-bottom: 60px;
+            letter-spacing: 4px;
+            font-weight: 700;
+            font-family: 'Orbitron', sans-serif;
+            text-shadow: 0 0 30px rgba(139, 0, 255, 0.6);
+            position: relative;
+        }
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 150px;
+            height: 4px;
+            background: linear-gradient(90deg, transparent, var(--primary), transparent);
+        }
+        .endpoints-grid {
+            display: grid;
+            gap: 25px;
+        }
+        .endpoint-card {
+            background: rgba(139, 0, 255, 0.05);
+            border: 1px solid var(--primary);
+            border-radius: 15px;
+            overflow: hidden;
+            transition: all 0.3s;
+        }
+        .endpoint-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(139, 0, 255, 0.4);
+        }
+        .endpoint-header {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            padding: 20px 30px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .method-badge {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 14px;
+            font-family: 'Orbitron', sans-serif;
+        }
+        .endpoint-path {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 20px;
+            font-weight: 700;
+        }
+        .endpoint-body {
+            padding: 30px;
+        }
+        .endpoint-desc {
+            color: var(--accent);
+            margin-bottom: 20px;
+            font-size: 18px;
+        }
+        .code-block {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 10px;
+            font-family: monospace;
+            font-size: 14px;
+            overflow-x: auto;
+            margin: 15px 0;
+        }
+        .auth-notice {
+            background: rgba(139, 0, 255, 0.1);
+            border: 2px solid var(--primary);
+            border-radius: 15px;
+            padding: 30px;
+            margin: 40px 0;
+            text-align: center;
+        }
+        .auth-notice h3 {
+            color: var(--primary);
+            font-size: 28px;
+            margin-bottom: 15px;
+            font-family: 'Orbitron', sans-serif;
+        }
+        .auth-notice p {
+            color: var(--accent);
+            font-size: 18px;
+            line-height: 1.8;
+        }
+        .code-inline {
+            background: rgba(139, 0, 255, 0.2);
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-family: monospace;
+            color: #fff;
+        }
+        footer {
+            text-align: center;
+            padding: 60px 20px;
+            background: rgba(10, 10, 10, 0.95);
+            border-top: 1px solid var(--primary);
+        }
+        footer p {
+            font-size: 18px;
+            color: var(--accent);
+            margin: 10px 0;
+        }
+        @media (max-width: 768px) {
+            .logo-3d { font-size: 60px; letter-spacing: 8px; }
+            .subtitle { font-size: 20px; letter-spacing: 4px; }
+            .section-title { font-size: 36px; }
+            .stat-value { font-size: 32px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="particles" id="particles"></div>
     
-    const response = {
-        service: "yt-cipher",
-        version: "0.0.1",
-        status: "running",
-        timestamp: new Date().toISOString(),
-        realTime: {
-            uptime: {
-                milliseconds: uptime,
-                formatted: formatUptime(uptime)
-            },
-            memory: {
-                used: memory.used,
-                total: memory.total,
-                percentage: memory.percentage
-            },
-            requests: {
-                total: realTimeData.totalRequests,
-                active: realTimeData.activeConnections,
-                errors: realTimeData.errorCount,
-                averageResponseTime: Math.round(realTimeData.averageResponseTime),
-                lastRequest: new Date(realTimeData.lastRequestTime).toISOString()
-            }
-        },
-        endpoints: {
-            health: "/health",
-            status: "/status",
-            info: "/info",
-            metrics: "/metrics",
-            docs: "/api/docs",
-            api: {
-                decrypt_signature: "POST /decrypt_signature",
-                get_sts: "POST /get_sts",
-                resolve_url: "POST /resolve_url",
-                batch_decrypt: "POST /batch_decrypt",
-                validate_signature: "POST /validate_signature",
-                clear_cache: "POST /clear_cache"
+    <div class="header">
+        <h1 class="logo-3d">YT-CIPHER</h1>
+        <p class="subtitle">SUSANOO PROTOCOL</p>
+        
+        <div class="stats-container">
+            <div class="stat-card">
+                <div class="stat-value" id="uptime">--</div>
+                <div class="stat-label">UPTIME</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="requests">--</div>
+                <div class="stat-label">REQUESTS</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="active">--</div>
+                <div class="stat-label">ACTIVE</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="avgTime">--</div>
+                <div class="stat-label">AVG TIME (ms)</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="section">
+        <h2 class="section-title">API ENDPOINTS</h2>
+        
+        <div class="auth-notice">
+            <h3>AUTHENTICATION REQUIRED</h3>
+            <p>All API endpoints require <span class="code-inline">Authorization: Bearer YOUR_TOKEN</span></p>
+            <p>Default token: <span class="code-inline">YOUR_API_TOKEN</span></p>
+        </div>
+        
+        <div class="endpoints-grid">
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method-badge">POST</span>
+                    <span class="endpoint-path">/decrypt_signature</span>
+                </div>
+                <div class="endpoint-body">
+                    <p class="endpoint-desc">Decrypt YouTube signature and n parameter</p>
+                    <div class="code-block">{ "encrypted_signature": "...", "n_param": "...", "player_url": "..." }</div>
+                </div>
+            </div>
+            
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method-badge">POST</span>
+                    <span class="endpoint-path">/get_sts</span>
+                </div>
+                <div class="endpoint-body">
+                    <p class="endpoint-desc">Extract signature timestamp from player</p>
+                    <div class="code-block">{ "player_url": "..." }</div>
+                </div>
+            </div>
+            
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method-badge">POST</span>
+                    <span class="endpoint-path">/resolve_url</span>
+                </div>
+                <div class="endpoint-body">
+                    <p class="endpoint-desc">Resolve stream URL with decrypted parameters</p>
+                    <div class="code-block">{ "stream_url": "...", "player_url": "...", "encrypted_signature": "...", "n_param": "..." }</div>
+                </div>
+            </div>
+            
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method-badge">POST</span>
+                    <span class="endpoint-path">/batch_decrypt</span>
+                </div>
+                <div class="endpoint-body">
+                    <p class="endpoint-desc">Decrypt multiple signatures in single request</p>
+                    <div class="code-block">{ "signatures": [{ "encrypted_signature": "...", "n_param": "...", "player_url": "..." }] }</div>
+                </div>
+            </div>
+            
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method-badge">POST</span>
+                    <span class="endpoint-path">/validate_signature</span>
+                </div>
+                <div class="endpoint-body">
+                    <p class="endpoint-desc">Validate signature encryption status</p>
+                    <div class="code-block">{ "encrypted_signature": "...", "player_url": "..." }</div>
+                </div>
+            </div>
+            
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method-badge">POST</span>
+                    <span class="endpoint-path">/clear_cache</span>
+                </div>
+                <div class="endpoint-body">
+                    <p class="endpoint-desc">Clear specific or all caches</p>
+                    <div class="code-block">{ "cache_type": "all", "clear_all": true }</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="section">
+        <h2 class="section-title">SYSTEM MONITORING</h2>
+        <div class="endpoints-grid">
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method-badge">GET</span>
+                    <span class="endpoint-path">/health</span>
+                </div>
+                <div class="endpoint-body">
+                    <p class="endpoint-desc">Health check with system status</p>
+                </div>
+            </div>
+            
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method-badge">GET</span>
+                    <span class="endpoint-path">/status</span>
+                </div>
+                <div class="endpoint-body">
+                    <p class="endpoint-desc">Detailed server status and metrics</p>
+                </div>
+            </div>
+            
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method-badge">GET</span>
+                    <span class="endpoint-path">/metrics</span>
+                </div>
+                <div class="endpoint-body">
+                    <p class="endpoint-desc">Prometheus metrics endpoint</p>
+                </div>
+            </div>
+            
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method-badge">GET</span>
+                    <span class="endpoint-path">/info</span>
+                </div>
+                <div class="endpoint-body">
+                    <p class="endpoint-desc">Server information and capabilities</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <footer>
+        <p>SUSANOO PROTOCOL ACTIVATED</p>
+        <p>&copy; with YT-CIPHER | Made with 💀 by RY4N</p>
+    </footer>
+    
+    <script>
+        function createParticles() {
+            const container = document.getElementById('particles');
+            for (let i = 0; i < 80; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.top = Math.random() * 100 + 'vh';
+                particle.style.animationDelay = Math.random() * 15 + 's';
+                particle.style.animationDuration = (Math.random() * 15 + 15) + 's';
+                container.appendChild(particle);
             }
         }
-    };
+        
+        async function updateStats() {
+            try {
+                const response = await fetch('/status');
+                const data = await response.json();
+                
+                if (data.realTime) {
+                    document.getElementById('uptime').textContent = data.realTime.uptime.formatted;
+                    document.getElementById('requests').textContent = data.realTime.requests.total.toLocaleString();
+                    document.getElementById('active').textContent = data.realTime.requests.active;
+                    document.getElementById('avgTime').textContent = data.realTime.requests.averageResponseTime;
+                }
+            } catch (error) {
+                console.error('Failed to update stats:', error);
+            }
+        }
+        
+        createParticles();
+        updateStats();
+        setInterval(updateStats, 3000);
+    </script>
+</body>
+</html>`;
     
-    return createJsonResponse(response, 200, { 
-        "X-Request-ID": requestId
+    return new Response(html, {
+        status: 200,
+        headers: { "Content-Type": "text/html" }
     });
 }
 
-// Metrics endpoint handler with real-time data
 async function handleMetrics(requestId: string): Promise<Response> {
     try {
         const metrics = await registry.metrics();
         const realTimeMetrics = `
-# Real-time metrics
 yt_cipher_active_connections ${realTimeData.activeConnections}
 yt_cipher_total_requests ${realTimeData.totalRequests}
 yt_cipher_error_count ${realTimeData.errorCount}
@@ -464,13 +829,11 @@ yt_cipher_uptime_seconds ${(Date.now() - serverStartTime) / 1000}
     }
 }
 
-// Health check endpoint handler with real-time data
 function handleHealth(requestId: string): Promise<Response> {
     try {
         const uptime = Date.now() - serverStartTime;
         const memory = getMemoryUsage();
         
-        // Determine overall status based on real-time data
         let status: 'healthy' | 'degraded' | 'unhealthy' = 'healthy';
         
         if (realTimeData.errorCount > realTimeData.totalRequests * 0.1) {
@@ -541,7 +904,6 @@ function handleHealth(requestId: string): Promise<Response> {
     }
 }
 
-// Status endpoint handler with real-time data
 function handleStatus(requestId: string): Promise<Response> {
     try {
         const uptime = Date.now() - serverStartTime;
@@ -617,7 +979,6 @@ function handleStatus(requestId: string): Promise<Response> {
     }
 }
 
-// Server info endpoint handler with real-time data
 function handleServerInfo(requestId: string): Response {
     const uptime = Date.now() - serverStartTime;
     const memory = getMemoryUsage();
@@ -675,7 +1036,6 @@ function handleServerInfo(requestId: string): Response {
             status: "/status", 
             info: "/info",
             metrics: "/metrics",
-            docs: "/api/docs",
             api: {
                 decrypt_signature: "POST /decrypt_signature",
                 get_sts: "POST /get_sts",
@@ -713,515 +1073,6 @@ function handleServerInfo(requestId: string): Response {
     });
 }
 
-// API documentation endpoint handler with HTML interface
-function handleApiDocs(requestId: string): Response {
-    const html = `
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>yt-cipher API Documentation</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-        }
-        
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        
-        .header {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            padding: 40px;
-            margin-bottom: 30px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-            text-align: center;
-        }
-        
-        .header h1 {
-            font-size: 3rem;
-            font-weight: 700;
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin-bottom: 10px;
-        }
-        
-        .header p {
-            font-size: 1.2rem;
-            color: #666;
-            margin-bottom: 20px;
-        }
-        
-        .status-badge {
-            display: inline-block;
-            background: #10b981;
-            color: white;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-weight: 600;
-            font-size: 0.9rem;
-        }
-        
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin: 30px 0;
-        }
-        
-        .stat-card {
-            background: rgba(255, 255, 255, 0.9);
-            padding: 20px;
-            border-radius: 15px;
-            text-align: center;
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
-        }
-        
-        .stat-value {
-            font-size: 2rem;
-            font-weight: 700;
-            color: #667eea;
-            margin-bottom: 5px;
-        }
-        
-        .stat-label {
-            color: #666;
-            font-size: 0.9rem;
-        }
-        
-        .endpoints-section {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            padding: 40px;
-            margin-bottom: 30px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-        }
-        
-        .endpoints-section h2 {
-            font-size: 2rem;
-            margin-bottom: 30px;
-            color: #333;
-        }
-        
-        .endpoint {
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
-            border-radius: 12px;
-            margin-bottom: 20px;
-            overflow: hidden;
-            transition: all 0.3s ease;
-        }
-        
-        .endpoint:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-        }
-        
-        .endpoint-header {
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            color: white;
-            padding: 15px 20px;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-        
-        .method {
-            background: rgba(255, 255, 255, 0.2);
-            padding: 4px 12px;
-            border-radius: 6px;
-            font-weight: 600;
-            font-size: 0.8rem;
-        }
-        
-        .path {
-            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-            font-size: 1.1rem;
-        }
-        
-        .endpoint-body {
-            padding: 20px;
-        }
-        
-        .endpoint-description {
-            color: #666;
-            margin-bottom: 15px;
-            font-size: 1rem;
-        }
-        
-        .request-response {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            margin-top: 15px;
-        }
-        
-        .request, .response {
-            background: #f1f5f9;
-            padding: 15px;
-            border-radius: 8px;
-            border-left: 4px solid #667eea;
-        }
-        
-        .request h4, .response h4 {
-            color: #333;
-            margin-bottom: 10px;
-            font-size: 0.9rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        
-        .json-example {
-            background: #1e293b;
-            color: #e2e8f0;
-            padding: 15px;
-            border-radius: 6px;
-            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-            font-size: 0.85rem;
-            overflow-x: auto;
-            margin-top: 10px;
-        }
-        
-        .auth-info {
-            background: #fef3c7;
-            border: 1px solid #f59e0b;
-            border-radius: 8px;
-            padding: 15px;
-            margin: 20px 0;
-        }
-        
-        .auth-info h4 {
-            color: #92400e;
-            margin-bottom: 10px;
-        }
-        
-        .auth-info p {
-            color: #92400e;
-            margin-bottom: 5px;
-        }
-        
-        .code {
-            background: #1e293b;
-            color: #e2e8f0;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-            font-size: 0.85rem;
-        }
-        
-        .footer {
-            text-align: center;
-            color: rgba(255, 255, 255, 0.8);
-            margin-top: 40px;
-        }
-        
-        @media (max-width: 768px) {
-            .request-response {
-                grid-template-columns: 1fr;
-            }
-            
-            .header h1 {
-                font-size: 2rem;
-            }
-            
-            .stats-grid {
-                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            }
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>yt-cipher API</h1>
-            <p>High-performance YouTube signature decryption service</p>
-            <span class="status-badge">● Running</span>
-        </div>
-        
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-value" id="uptime">Loading...</div>
-                <div class="stat-label">Uptime</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-value" id="requests">Loading...</div>
-                <div class="stat-label">Total Requests</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-value" id="active">Loading...</div>
-                <div class="stat-label">Active Connections</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-value" id="responseTime">Loading...</div>
-                <div class="stat-label">Avg Response Time (ms)</div>
-            </div>
-        </div>
-        
-        <div class="endpoints-section">
-            <h2>API Endpoints</h2>
-            
-            <div class="auth-info">
-                <h4>🔐 Authentication</h4>
-                <p>All API endpoints require authentication using the <span class="code">Authorization</span> header.</p>
-                <p>Format: <span class="code">Authorization: Bearer YOUR_API_TOKEN</span></p>
-                <p>Default token is <span class="code">YOUR_API_TOKEN</span> - please change this in production!</p>
-            </div>
-            
-            <div class="endpoint">
-                <div class="endpoint-header">
-                    <span class="method">POST</span>
-                    <span class="path">/decrypt_signature</span>
-                </div>
-                <div class="endpoint-body">
-                    <div class="endpoint-description">
-                        Decrypt YouTube signature and n parameter for stream URL resolution.
-                    </div>
-                    <div class="request-response">
-                        <div class="request">
-                            <h4>Request</h4>
-                            <div class="json-example">{
-  "encrypted_signature": "encrypted_signature_string",
-  "n_param": "encrypted_n_param_string",
-  "player_url": "https://www.youtube.com/s/player/player_id/player.js"
-}</div>
-                        </div>
-                        <div class="response">
-                            <h4>Response</h4>
-                            <div class="json-example">{
-  "decrypted_signature": "decrypted_signature_string",
-  "decrypted_n_sig": "decrypted_n_param_string",
-  "success": true,
-  "timestamp": "2024-01-01T00:00:00.000Z",
-  "processing_time_ms": 150
-}</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="endpoint">
-                <div class="endpoint-header">
-                    <span class="method">POST</span>
-                    <span class="path">/get_sts</span>
-                </div>
-                <div class="endpoint-body">
-                    <div class="endpoint-description">
-                        Extract signature timestamp from YouTube player script.
-                    </div>
-                    <div class="request-response">
-                        <div class="request">
-                            <h4>Request</h4>
-                            <div class="json-example">{
-  "player_url": "https://www.youtube.com/s/player/player_id/player.js"
-}</div>
-                        </div>
-                        <div class="response">
-                            <h4>Response</h4>
-                            <div class="json-example">{
-  "sts": "12345",
-  "success": true,
-  "timestamp": "2024-01-01T00:00:00.000Z",
-  "processing_time_ms": 100
-}</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="endpoint">
-                <div class="endpoint-header">
-                    <span class="method">POST</span>
-                    <span class="path">/resolve_url</span>
-                </div>
-                <div class="endpoint-body">
-                    <div class="endpoint-description">
-                        Resolve YouTube stream URL with decrypted parameters.
-                    </div>
-                    <div class="request-response">
-                        <div class="request">
-                            <h4>Request</h4>
-                            <div class="json-example">{
-  "stream_url": "https://example.com/video?c=WEB&cver=2.0&s=encrypted_signature&n=encrypted_n_param",
-  "player_url": "https://www.youtube.com/s/player/player_id/player.js",
-  "encrypted_signature": "encrypted_signature_string",
-  "signature_key": "sig",
-  "n_param": "encrypted_n_param_string"
-}</div>
-                        </div>
-                        <div class="response">
-                            <h4>Response</h4>
-                            <div class="json-example">{
-  "resolved_url": "https://example.com/video?c=WEB&cver=2.0&sig=decrypted_signature&n=decrypted_n_param",
-  "success": true,
-  "timestamp": "2024-01-01T00:00:00.000Z",
-  "processing_time_ms": 200
-}</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="endpoint">
-                <div class="endpoint-header">
-                    <span class="method">POST</span>
-                    <span class="path">/batch_decrypt</span>
-                </div>
-                <div class="endpoint-body">
-                    <div class="endpoint-description">
-                        Decrypt multiple signatures in a single request for improved performance.
-                    </div>
-                    <div class="request-response">
-                        <div class="request">
-                            <h4>Request</h4>
-                            <div class="json-example">{
-  "signatures": [
-    {
-      "encrypted_signature": "encrypted_signature_string",
-      "n_param": "encrypted_n_param_string",
-      "player_url": "https://www.youtube.com/s/player/player_id/player.js"
-    }
-  ]
-}</div>
-                        </div>
-                        <div class="response">
-                            <h4>Response</h4>
-                            <div class="json-example">{
-  "results": [
-    {
-      "decrypted_signature": "decrypted_signature_string",
-      "decrypted_n_sig": "decrypted_n_param_string",
-      "success": true
-    }
-  ],
-  "success": true,
-  "timestamp": "2024-01-01T00:00:00.000Z",
-  "processing_time_ms": 300
-}</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="endpoint">
-                <div class="endpoint-header">
-                    <span class="method">POST</span>
-                    <span class="path">/validate_signature</span>
-                </div>
-                <div class="endpoint-body">
-                    <div class="endpoint-description">
-                        Validate if a signature is properly encrypted and can be decrypted.
-                    </div>
-                    <div class="request-response">
-                        <div class="request">
-                            <h4>Request</h4>
-                            <div class="json-example">{
-  "encrypted_signature": "encrypted_signature_string",
-  "player_url": "https://www.youtube.com/s/player/player_id/player.js"
-}</div>
-                        </div>
-                        <div class="response">
-                            <h4>Response</h4>
-                            <div class="json-example">{
-  "is_valid": true,
-  "signature_type": "encrypted",
-  "success": true,
-  "timestamp": "2024-01-01T00:00:00.000Z",
-  "processing_time_ms": 50
-}</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="endpoint">
-                <div class="endpoint-header">
-                    <span class="method">POST</span>
-                    <span class="path">/clear_cache</span>
-                </div>
-                <div class="endpoint-body">
-                    <div class="endpoint-description">
-                        Clear specific or all caches to free up memory.
-                    </div>
-                    <div class="request-response">
-                        <div class="request">
-                            <h4>Request</h4>
-                            <div class="json-example">{
-  "cache_type": "all",
-  "clear_all": true
-}</div>
-                        </div>
-                        <div class="response">
-                            <h4>Response</h4>
-                            <div class="json-example">{
-  "cleared_caches": ["player", "solver", "preprocessed", "sts"],
-  "success": true,
-  "timestamp": "2024-01-01T00:00:00.000Z",
-  "processing_time_ms": 100
-}</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="footer">
-            <p>Made with ❤️ by RY4N | <a href="https://github.com/ryanisnomore/yt-cipher" style="color: rgba(255, 255, 255, 0.8);">GitHub</a></p>
-        </div>
-    </div>
-    
-    <script>
-        // Real-time data updates
-        async function updateStats() {
-            try {
-                const response = await fetch('/status');
-                const data = await response.json();
-                
-                if (data.realTime) {
-                    document.getElementById('uptime').textContent = data.realTime.uptime.formatted;
-                    document.getElementById('requests').textContent = data.realTime.requests.total.toLocaleString();
-                    document.getElementById('active').textContent = data.realTime.requests.active;
-                    document.getElementById('responseTime').textContent = data.realTime.requests.averageResponseTime;
-                }
-            } catch (error) {
-                console.error('Failed to update stats:', error);
-            }
-        }
-        
-        // Update stats every 5 seconds
-        updateStats();
-        setInterval(updateStats, 5000);
-    </script>
-</body>
-</html>`;
-    
-    return new Response(html, {
-        status: 200,
-        headers: { 
-            "Content-Type": "text/html",
-            "X-Request-ID": requestId
-        },
-    });
-}
-
-// Graceful shutdown handler
 function gracefulShutdown(signal: string) {
     if (isShuttingDown) {
         console.log(formatLogMessage('warn', 'Shutdown already in progress', { signal }));
@@ -1232,10 +1083,7 @@ function gracefulShutdown(signal: string) {
     console.log(formatLogMessage('info', 'Graceful shutdown initiated', { signal }));
     
     try {
-        // Shutdown workers
         console.log(formatLogMessage('info', 'Shutting down worker pool...'));
-        // await shutdownWorkers(); // Uncomment when implemented
-        
         console.log(formatLogMessage('info', 'Graceful shutdown completed'));
         Deno.exit(0);
     } catch (error) {
@@ -1246,11 +1094,9 @@ function gracefulShutdown(signal: string) {
     }
 }
 
-// Setup signal handlers
 Deno.addSignalListener("SIGINT", () => gracefulShutdown("SIGINT"));
 Deno.addSignalListener("SIGTERM", () => gracefulShutdown("SIGTERM"));
 
-// Server initialization
 console.log(formatLogMessage('info', 'Starting server initialization', {
     port: config.port,
     host: config.host,
@@ -1273,7 +1119,6 @@ try {
     }));
 }
 
-// Initialize components
 console.log(formatLogMessage('info', 'Initializing caches...'));
 await initializeCache();
 
@@ -1281,8 +1126,6 @@ console.log(formatLogMessage('info', 'Initializing worker pool...'));
 initializeWorkers();
 
 console.log(formatLogMessage('info', 'Server components initialized successfully'));
-
-// Start server
 console.log(formatLogMessage('info', 'Starting server', {
     url: `http://${config.host}:${config.port}`
 }));
