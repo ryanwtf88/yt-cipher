@@ -1,0 +1,23 @@
+name: Build and Push to GHCR
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Build Docker image
+        run: docker build -t yt-cipher .
+        
+      - name: Push to GitHub Container Registry
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+          docker tag yt-cipher ghcr.io/${{ github.repository_owner }}/yt-cipher:latest
+          docker push ghcr.io/${{ github.repository_owner }}/yt-cipher:latest
