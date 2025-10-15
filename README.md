@@ -88,12 +88,11 @@ A high-performance YouTube signature decryption service built with Deno, designe
 
 ### Service Information
 
-- **GET** `/` - Service information with real-time stats
+- **GET** `/` - Service Information - With Docs
 - **GET** `/health` - Health check with real-time monitoring
 - **GET** `/status` - Detailed system status with performance metrics
 - **GET** `/info` - Server information and capabilities
 - **GET** `/metrics` - Prometheus metrics with real-time data
-- **GET** `/api/docs` - Interactive HTML API documentation
 
 ### Core API Endpoints
 
@@ -301,7 +300,7 @@ The service provides real-time monitoring through:
 - Active connection counts
 - Average response times
 - Error rates and performance metrics
-- Interactive HTML dashboard at `/api/docs`
+- Interactive HTML dashboard at `/`
 
 ## Development
 
