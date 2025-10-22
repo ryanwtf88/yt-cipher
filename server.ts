@@ -19,7 +19,7 @@ import {
 import type { ApiRequest, RequestContext, HealthStatus, ServerConfig } from "./src/types.ts";
 
 const config: ServerConfig = {
-    port: parseInt(Deno.env.get("SERVER_PORT") || Deno.env.get("PORT") || "3000", 10),
+    port: parseInt(Deno.env.get("SERVER_PORT") || Deno.env.get("PORT") || "8001", 10),
     host: Deno.env.get("SERVER_HOST") || "0.0.0.0",
     apiToken: Deno.env.get("API_TOKEN") || "YOUR_API_TOKEN",
     rateLimit: {
@@ -753,7 +753,7 @@ function handleRoot(_requestId: string): Response {
     
     <footer>
         <p>SUSANOO PROTOCOL ACTIVATED</p>
-        <p>&copy; with YT-CIPHER | Made with 💀 by RY4N</p>
+        <p>&copy; YT-CIPHER | Made with 💀 by RY4N</p>
     </footer>
     
     <script>
