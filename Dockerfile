@@ -35,7 +35,7 @@ RUN deno cache server.ts && \
 USER ytcipher
 
 # Expose the port
-EXPOSE 3000
+EXPOSE 8001
 
 # Health check with improved logic
 HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
