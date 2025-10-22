@@ -356,6 +356,8 @@ This project is licensed under the [MIT License](LICENSE).
 - [Lavalink](https://github.com/lavalink-devs/Lavalink) - The music bot framework this integrates with
 - [yt-dlp](https://github.com/yt-dlp/yt-dlp) - For YouTube extraction inspiration
 - [EJS](https://github.com/yt-dlp/ejs) - For signature decryption algorithms
+- [yt-cipher](https://github.com/kikkia/yt-cipher) - The repository this is based off of and should be forked from ;)
+- [cursor](https://cursor.com/) - The author of basically all the code not from the above repo
 
 ## Support
 
