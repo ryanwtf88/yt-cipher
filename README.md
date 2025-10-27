@@ -5,6 +5,7 @@ A high-performance YouTube signature decryption service built with Deno, designe
 [![Deno](https://img.shields.io/badge/Deno-2.5.4-blue?logo=deno)](https://deno.land/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9.2-blue?logo=typescript)](https://www.typescriptlang.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Packages](https://github.com/ryanwtf88/yt-cipher/actions/workflows/image.yml/badge.svg?branch=main)](https://github.com/ryanwtf88/yt-cipher/actions/workflows/image.yml)
 [![Version](https://img.shields.io/badge/Version-0.0.1-blue.svg)](https://github.com/ryanwtf88/yt-cipher)
 [![Author](https://img.shields.io/badge/Author-RY4N-orange.svg)](https://github.com/ryanwtf88/yt-cipher)
 [![Stars](https://img.shields.io/github/stars/ryanwtf88/yt-cipher?style=social)](https://github.com/ryanwtf88/yt-cipher)
