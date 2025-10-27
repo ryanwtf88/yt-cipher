@@ -126,6 +126,14 @@ export const playerUrlRequests = Counter.with({
     registry: [registry],
 });
 
+// Player Fletche Metrics
+export const playerScriptFetches = Counter.with({
+    name: "player_script_fetches_total",
+    help: "Total number of player script fetches.",
+    labels: ["player_url", "status"],
+    registry: [registry],
+});
+
 // Solver Metrics
 export const solverOperations = Counter.with({
     name: "solver_operations_total",
