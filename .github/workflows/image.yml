@@ -1,5 +1,4 @@
-name: Build and Push to GHCR
-
+name: Packages
 on:
   push:
     branches: [ main ]
