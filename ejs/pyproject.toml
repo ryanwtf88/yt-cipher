@@ -1,5 +1,8 @@
 [build-system]
-requires = ["hatchling", "hatch-build-scripts", "hatch-vcs"]
+requires = [
+  "hatchling>=1.27.0",
+  "hatch-vcs",
+]
 build-backend = "hatchling.build"
 
 [project]
@@ -7,16 +10,16 @@ name = "yt-dlp-ejs"
 description = "External JavaScript for yt-dlp supporting many runtimes"
 dynamic = ["version"]
 readme = "README.md"
-requires-python = ">=3.9"
-license = "Unlicense"
-keywords = []
+requires-python = ">=3.10"
+license = "Unlicense AND MIT AND ISC"
+license-files = ["LICENSE"]
+keywords = ["yt-dlp"]
 authors = [
   { name = "Simon Sawicki", email = "contact@grub4k.dev" },
 ]
 classifiers = [
   "Development Status :: 5 - Production/Stable",
   "Programming Language :: Python",
-  "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
@@ -27,6 +30,11 @@ classifiers = [
 ]
 dependencies = []
 
+[dependency-groups]
+dev = [
+    "ruff>=0.14.1",
+]
+
 [project.urls]
 Documentation = "https://github.com/yt-dlp/ejs#readme"
 Issues = "https://github.com/yt-dlp/ejs/issues"
@@ -35,15 +43,46 @@ Source = "https://github.com/yt-dlp/ejs"
 [tool.hatch.version]
 source = "vcs"
 
+[tool.hatch.build.targets.sdist]
+exclude = [
+  "/.github/**",
+  "/src/yt/solver/test/players/*",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["yt_dlp_ejs"]
+
 [tool.hatch.build.hooks.vcs]
 version-file = "yt_dlp_ejs/_version.py"
 
-[[tool.hatch.build.hooks.build-scripts.scripts]]
-commands = [
-  "deno install",
-  "deno task bundle",
+[tool.hatch.build.targets.wheel.hooks.custom]
+
+[tool.ruff.lint]
+select = [
+  "C4",
+  "E",
+  "F",
+  "I",
+  "PLC",
+  "PLE",
+  "PLW",
+  "PYI",
+  "RET",
+  "RUF",
+  "SIM",
+  "TD",
+  "TID",
+  "W",
+]
+ignore = [
+  "TD003",
+  "E402",
+  "E501",
+  "PLR09",
 ]
 
-[tool.hatch.build.targets.wheel.force-include]
-"dist/yt.solver.core.min.js" = "yt_dlp_ejs/yt/solver/core.min.js"
-"dist/yt.solver.lib.min.js" = "yt_dlp_ejs/yt/solver/lib.min.js"
+[tool.ruff.lint.isort]
+force-single-line = true
+
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "all"
