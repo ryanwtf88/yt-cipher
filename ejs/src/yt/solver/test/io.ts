@@ -23,7 +23,9 @@ export async function getIO(): Promise<IO> {
 }
 
 async function _getIO(): Promise<IO> {
-  if ((globalThis as { process?: { release?: { name?: string } } }).process?.release?.name === "node") {
+  // Old Deno requires casting to any as globalThis lacks an index signature
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  if ((globalThis as any).process?.release?.name === "node") {
     // Assume node compatibility
     const { access, readFile } = await import("node:fs/promises");
     const { deepStrictEqual } = await import("node:assert");
@@ -50,11 +52,11 @@ async function _getIO(): Promise<IO> {
       };
     } else {
       writeFile = (await import("node:fs/promises"))["writeFile"];
-      const { describe, it } = await import("node:test");
+      const { suite, test: subtest } = await import("node:test");
       test = (name, func) => {
-        describe(name, () => {
+        suite(name, () => {
           return func(assert, async (name, func): Promise<void> => {
-            await it(name, async () => {
+            await subtest(name, async () => {
               await func(assert);
             });
           });
