@@ -1,9 +1,9 @@
 import type { ApiRequest, RequestContext } from "./types.ts";
 import { validateAndNormalizePlayerUrl } from "./utils.ts";
 
-type Next = (ctx: RequestContext) => Promise<Response>;
+type Next = (ctx: RequestContext) => Response | Promise<Response>;
 type ValidationSchema = {
-    [key: string]: (value: unknown) => boolean;
+    [key: string]: (value: any) => boolean;
 };
 
 const signatureRequestSchema: ValidationSchema = {
@@ -22,7 +22,7 @@ const resolveUrlRequestSchema: ValidationSchema = {
 function validateObject(obj: unknown, schema: ValidationSchema): { isValid: boolean, errors: string[] } {
     const errors: string[] = [];
     for (const key in schema) {
-        if (!Object.prototype.hasOwnProperty.call(obj, key) || !schema[key](obj[key])) {
+        if (!Object.prototype.hasOwnProperty.call(obj, key) || !schema[key]((obj as any)[key])) {
             errors.push(`'${key}' is missing or invalid`);
         }
     }
@@ -43,7 +43,7 @@ export function withValidation(handler: Next): Next {
         } else {
             return handler(ctx);
         }
-        
+
         const body = ctx.body as ApiRequest;
 
         const { isValid, errors } = validateObject(body, schema);
@@ -54,7 +54,7 @@ export function withValidation(handler: Next): Next {
                 headers: { "Content-Type": "application/json" },
             });
         }
-        
+
         try {
             if ('player_url' in body) {
                 const normalizedUrl = validateAndNormalizePlayerUrl(body.player_url);

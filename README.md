@@ -89,7 +89,7 @@ A high-performance YouTube signature decryption service built with Deno, designe
 
 ### Service Information
 
-- **GET** `/` - Service Information - With Docs
+- **GET** `/` - Interactive API Documentation (Swagger UI)
 - **GET** `/health` - Health check with real-time monitoring
 - **GET** `/status` - Detailed system status with performance metrics
 - **GET** `/info` - Server information and capabilities

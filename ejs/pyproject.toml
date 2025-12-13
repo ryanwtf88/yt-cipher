@@ -47,6 +47,7 @@ source = "vcs"
 exclude = [
   "/.github/**",
   "/src/yt/solver/test/players/*",
+  "!/src/yt/solver/test/players/.gitignore",
 ]
 
 [tool.hatch.build.targets.wheel]
@@ -56,6 +57,7 @@ packages = ["yt_dlp_ejs"]
 version-file = "yt_dlp_ejs/_version.py"
 
 [tool.hatch.build.targets.wheel.hooks.custom]
+path = "pnpm.py"
 
 [tool.ruff.lint]
 select = [

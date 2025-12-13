@@ -1,4 +1,4 @@
-import { type ESTree } from "meriyah";
+import { type ESTree } from "npm:meriyah";
 import { matchesStructure } from "../../utils.ts";
 import { type DeepPartial } from "../../types.ts";
 
@@ -62,7 +62,7 @@ const logicalExpression: DeepPartial<ESTree.ExpressionStatement> = {
   },
 };
 
-const identifier = {
+const identifier: DeepPartial<ESTree.Node> = {
   or: [
     {
       type: "ExpressionStatement",
@@ -102,9 +102,7 @@ const identifier = {
 export function extract(
   node: ESTree.Node,
 ): ESTree.ArrowFunctionExpression | null {
-  if (
-    !matchesStructure(node, identifier as unknown as DeepPartial<ESTree.Node>)
-  ) {
+  if (!matchesStructure(node, identifier)) {
     return null;
   }
   let block: ESTree.BlockStatement | undefined | null;

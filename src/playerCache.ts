@@ -18,12 +18,12 @@ export async function getPlayerFilePath(playerUrl: string): Promise<string> {
         if (error instanceof Deno.errors.NotFound) {
             console.log(`Cache miss for player: ${playerUrl}. Fetching...`);
             const response = await fetch(playerUrl);
-            playerScriptFetches.labels({ player_url: playerUrl, status: response.status }).inc();
-            
+            playerScriptFetches.labels({ player_url: playerUrl, status: String(response.status) }).inc();
+
             if (!response.ok) {
                 throw new Error(`Failed to fetch player from ${playerUrl}: ${response.status}`);
             }
-            
+
             const playerContent = await response.text();
             await Deno.writeTextFile(filePath, playerContent);
 
@@ -32,7 +32,7 @@ export async function getPlayerFilePath(playerUrl: string): Promise<string> {
                 fileCount++;
             }
             cacheSize.labels({ cache_name: 'player' }).set(fileCount);
-            
+
             console.log(`Saved player to cache: ${filePath}`);
             return filePath;
         }
@@ -45,15 +45,15 @@ export async function initializeCache(): Promise<void> {
 
     let fileCount = 0;
     const fourteenDays = 14 * 24 * 60 * 60 * 1000;
-    
+
     console.log(`Cleaning up player cache directory: ${CACHE_DIR}`);
-    
+
     for await (const dirEntry of Deno.readDir(CACHE_DIR)) {
         if (dirEntry.isFile) {
             const filePath = join(CACHE_DIR, dirEntry.name);
             const stat = await Deno.stat(filePath);
             const lastAccessed = stat.atime?.getTime() ?? stat.mtime?.getTime() ?? stat.birthtime?.getTime();
-            
+
             if (lastAccessed && (Date.now() - lastAccessed > fourteenDays)) {
                 console.log(`Deleting stale player cache file: ${filePath}`);
                 await Deno.remove(filePath);
@@ -62,7 +62,7 @@ export async function initializeCache(): Promise<void> {
             }
         }
     }
-    
+
     cacheSize.labels({ cache_name: 'player' }).set(fileCount);
     console.log(`Player cache directory ensured at: ${CACHE_DIR}`);
 }
