@@ -1,8 +1,8 @@
 import { extractPlayerId, generateRequestId, formatLogMessage } from "./utils.ts";
-import { 
-    endpointHits, 
-    responseCodes, 
-    endpointLatency, 
+import {
+    endpointHits,
+    responseCodes,
+    endpointLatency,
     rateLimitHits,
     rateLimitRejections,
     requestSize,
@@ -12,7 +12,7 @@ import {
 } from "./metrics.ts";
 import type { RequestContext, RateLimitConfig } from "./types.ts";
 
-type Next = (ctx: RequestContext) => Promise<Response>;
+export type Next = (ctx: RequestContext) => Response | Promise<Response>;
 
 // Rate limiting store
 class RateLimitStore {
@@ -51,13 +51,13 @@ class RateLimitStore {
     increment(key: string, windowMs: number): { count: number; resetTime: number } {
         const now = Date.now();
         const entry = this.get(key);
-        
+
         if (!entry) {
             const resetTime = now + windowMs;
             this.set(key, 1, resetTime);
             return { count: 1, resetTime };
         }
-        
+
         const newCount = entry.count + 1;
         this.set(key, newCount, entry.resetTime);
         return { count: newCount, resetTime: entry.resetTime };
@@ -79,11 +79,11 @@ function getClientIp(req: Request): string {
     const forwarded = req.headers.get('X-Forwarded-For');
     const realIp = req.headers.get('X-Real-IP');
     const cfConnectingIp = req.headers.get('CF-Connecting-IP');
-    
+
     if (cfConnectingIp) return cfConnectingIp;
     if (realIp) return realIp;
     if (forwarded) return forwarded.split(',')[0].trim();
-    
+
     return 'unknown';
 }
 
@@ -94,28 +94,28 @@ function withRateLimit(config: RateLimitConfig = defaultRateLimitConfig) {
             const clientIp = getClientIp(ctx.req);
             const userAgent = ctx.req.headers.get('User-Agent') || 'unknown';
             const { pathname } = new URL(ctx.req.url);
-            
+
             const rateLimitKey = `${clientIp}:${pathname}`;
             const { count, resetTime } = rateLimitStore.increment(rateLimitKey, config.windowMs);
-            
+
             // Record rate limit hit
-            rateLimitHits.labels({ 
-                client_ip: clientIp, 
-                user_agent: userAgent, 
-                endpoint: pathname 
+            rateLimitHits.labels({
+                client_ip: clientIp,
+                user_agent: userAgent,
+                endpoint: pathname
             }).inc();
-            
+
             if (count > config.maxRequests) {
                 const retryAfter = Math.ceil((resetTime - Date.now()) / 1000);
-                
+
                 // Record rate limit rejection
-                rateLimitRejections.labels({ 
-                    client_ip: clientIp, 
-                    user_agent: userAgent, 
-                    endpoint: pathname, 
-                    reason: 'limit_exceeded' 
+                rateLimitRejections.labels({
+                    client_ip: clientIp,
+                    user_agent: userAgent,
+                    endpoint: pathname,
+                    reason: 'limit_exceeded'
                 }).inc();
-                
+
                 return new Response(JSON.stringify({
                     success: false,
                     error: {
@@ -143,14 +143,14 @@ function withRateLimit(config: RateLimitConfig = defaultRateLimitConfig) {
                     }
                 });
             }
-            
+
             // Add rate limit info to context
             ctx.rateLimitInfo = {
                 limit: config.maxRequests,
                 remaining: Math.max(0, config.maxRequests - count),
                 reset: resetTime
             };
-            
+
             return handler(ctx);
         };
     };
@@ -164,7 +164,7 @@ function withErrorHandling(handler: Next): Next {
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
             const errorStack = error instanceof Error ? error.stack : undefined;
-            
+
             // Record error metrics
             recordError(
                 'middleware_error',
@@ -172,7 +172,7 @@ function withErrorHandling(handler: Next): Next {
                 new URL(ctx.req.url).pathname,
                 'error'
             );
-            
+
             console.error(formatLogMessage('error', 'Middleware error', {
                 requestId: ctx.requestId,
                 error: errorMessage,
@@ -180,7 +180,7 @@ function withErrorHandling(handler: Next): Next {
                 url: ctx.req.url,
                 method: ctx.req.method
             }));
-            
+
             return new Response(JSON.stringify({
                 success: false,
                 error: {
@@ -210,10 +210,10 @@ function withLogging(handler: Next): Next {
         const method = ctx.req.method;
         const userAgent = ctx.req.headers.get('User-Agent') || 'unknown';
         const clientIp = getClientIp(ctx.req);
-        
+
         // Only log requests for non-health endpoints and errors
         const shouldLog = pathname !== '/health' && pathname !== '/metrics';
-        
+
         if (shouldLog) {
             console.log(formatLogMessage('debug', 'Request started', {
                 requestId: ctx.requestId,
@@ -223,13 +223,13 @@ function withLogging(handler: Next): Next {
                 userAgent: userAgent.substring(0, 50) // Truncate long user agents
             }));
         }
-        
+
         const response = await handler(ctx);
-        
+
         const duration = performance.now() - startTime;
-        const responseSizeBytes = response.headers.get('Content-Length') ? 
+        const responseSizeBytes = response.headers.get('Content-Length') ?
             parseInt(response.headers.get('Content-Length')!) : 0;
-        
+
         // Only log completed requests for errors or if debug logging is enabled
         if (shouldLog && (response.status >= 400 || Deno.env.get("LOG_LEVEL") === "debug")) {
             console.log(formatLogMessage('info', 'Request completed', {
@@ -242,7 +242,7 @@ function withLogging(handler: Next): Next {
                 clientIp
             }));
         }
-        
+
         return response;
     };
 }
@@ -255,29 +255,29 @@ export function withMetrics(handler: Next): Next {
         const pluginVersion = ctx.req.headers.get("Plugin-Version") ?? "unknown";
         const userAgent = ctx.req.headers.get("User-Agent") ?? "unknown";
         const clientIp = getClientIp(ctx.req);
-        
+
         // Record request metrics
-        endpointHits.labels({ 
-            method: ctx.req.method, 
-            pathname, 
-            player_id: playerId, 
-            plugin_version: pluginVersion, 
+        endpointHits.labels({
+            method: ctx.req.method,
+            pathname,
+            player_id: playerId,
+            plugin_version: pluginVersion,
             user_agent: userAgent,
             client_ip: clientIp
         }).inc();
-        
+
         // Record request size
         const contentLength = ctx.req.headers.get('Content-Length');
         if (contentLength) {
-            requestSize.labels({ 
-                method: ctx.req.method, 
-                pathname 
+            requestSize.labels({
+                method: ctx.req.method,
+                pathname
             }).observe(parseInt(contentLength));
         }
-        
+
         const start = performance.now();
         let response: Response;
-        
+
         try {
             response = await handler(ctx);
         } catch (error) {
@@ -290,41 +290,41 @@ export function withMetrics(handler: Next): Next {
             );
             throw error;
         }
-        
+
         const duration = (performance.now() - start) / 1000;
         const cached = response.headers.get("X-Cache-Hit") === "true" ? "true" : "false";
         const endpointType = getEndpointType(pathname);
-        
+
         // Record response metrics
-        endpointLatency.labels({ 
-            method: ctx.req.method, 
-            pathname, 
-            player_id: playerId, 
+        endpointLatency.labels({
+            method: ctx.req.method,
+            pathname,
+            player_id: playerId,
             cached,
             endpoint_type: endpointType
         }).observe(duration);
-        
-        responseCodes.labels({ 
-            method: ctx.req.method, 
-            pathname, 
-            status: String(response.status), 
-            player_id: playerId, 
-            plugin_version: pluginVersion, 
+
+        responseCodes.labels({
+            method: ctx.req.method,
+            pathname,
+            status: String(response.status),
+            player_id: playerId,
+            plugin_version: pluginVersion,
             user_agent: userAgent,
             client_ip: clientIp
         }).inc();
-        
-        
+
+
         // Record response size
         const responseContentLength = response.headers.get('Content-Length');
         if (responseContentLength) {
-            responseSize.labels({ 
-                method: ctx.req.method, 
-                pathname, 
+            responseSize.labels({
+                method: ctx.req.method,
+                pathname,
                 status: String(response.status)
             }).observe(parseInt(responseContentLength));
         }
-        
+
         return response;
     };
 }
@@ -344,7 +344,7 @@ function withCORS(handler: Next): Next {
     return async (ctx: RequestContext) => {
         const { pathname: _pathname } = new URL(ctx.req.url);
         const method = ctx.req.method;
-        
+
         // Handle preflight OPTIONS requests
         if (method === 'OPTIONS') {
             return new Response(null, {
@@ -358,16 +358,16 @@ function withCORS(handler: Next): Next {
                 }
             });
         }
-        
+
         const response = await handler(ctx);
-        
+
         // Add CORS headers to all responses
         response.headers.set('Access-Control-Allow-Origin', '*');
         response.headers.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, HEAD');
         response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Request-ID, User-Agent, Accept');
         response.headers.set('Access-Control-Max-Age', '86400');
         response.headers.set('Access-Control-Allow-Credentials', 'false');
-        
+
         return response;
     };
 }
@@ -376,14 +376,14 @@ function withCORS(handler: Next): Next {
 function withSecurityHeaders(handler: Next): Next {
     return async (ctx: RequestContext) => {
         const response = await handler(ctx);
-        
+
         // Add security headers
         response.headers.set('X-Content-Type-Options', 'nosniff');
         response.headers.set('X-Frame-Options', 'DENY');
         response.headers.set('X-XSS-Protection', '1; mode=block');
         response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
         response.headers.set('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
-        
+
         return response;
     };
 }
@@ -393,19 +393,19 @@ export function withAuth(handler: Next): Next {
     return async (ctx: RequestContext) => {
         const { pathname } = new URL(ctx.req.url);
         const _method = ctx.req.method;
-        
+
         // Skip auth for health and metrics endpoints
         if (pathname === '/health' || pathname === '/metrics' || pathname === '/status' || pathname === '/api/docs') {
             return await handler(ctx);
         }
-        
+
         // Check for API token authentication (Lavalink style)
         const authHeader = ctx.req.headers.get('Authorization');
         const apiToken = Deno.env.get("RY4N");
-        
+
         if (apiToken) {
             let isValidAuth = false;
-            
+
             // Check Bearer token format
             if (authHeader && authHeader.startsWith('Bearer ')) {
                 const token = authHeader.substring(7);
@@ -413,7 +413,7 @@ export function withAuth(handler: Next): Next {
                     isValidAuth = true;
                 }
             }
-            
+
             // Check Basic auth format (for Lavalink compatibility)
             if (!isValidAuth && authHeader && authHeader.startsWith('Basic ')) {
                 try {
@@ -427,12 +427,12 @@ export function withAuth(handler: Next): Next {
                     // Invalid base64, continue to error
                 }
             }
-            
+
             // Check direct password in Authorization header (fallback)
             if (!isValidAuth && authHeader && authHeader === apiToken) {
                 isValidAuth = true;
             }
-            
+
             if (!isValidAuth) {
                 return new Response(JSON.stringify({
                     success: false,
@@ -445,13 +445,13 @@ export function withAuth(handler: Next): Next {
                     }
                 }), {
                     status: 401,
-                    headers: { 
+                    headers: {
                         "Content-Type": "application/json",
                         "X-Request-ID": ctx.requestId
                     }
                 });
             }
-            
+
             const providedToken = authHeader!.substring(7); // Remove 'Bearer '
             if (providedToken !== apiToken) {
                 return new Response(JSON.stringify({
@@ -465,7 +465,7 @@ export function withAuth(handler: Next): Next {
                     }
                 }), {
                     status: 401,
-                    headers: { 
+                    headers: {
                         "Content-Type": "application/json",
                         "X-Request-ID": ctx.requestId
                     }
@@ -478,7 +478,7 @@ export function withAuth(handler: Next): Next {
                 pathname
             }));
         }
-        
+
         return await handler(ctx);
     };
 }
@@ -490,19 +490,19 @@ function withRequestId(handler: Next): Next {
         if (!ctx.requestId) {
             ctx.requestId = generateRequestId();
         }
-        
+
         const response = await handler(ctx);
-        
+
         // Add request ID to response headers
         response.headers.set('X-Request-ID', ctx.requestId);
-        
+
         return response;
     };
 }
 
 // Compose all middleware
 export function composeMiddleware(
-    handler: Next, 
+    handler: Next,
     options: {
         enableAuth?: boolean;
         enableRateLimit?: boolean;
@@ -520,44 +520,44 @@ export function composeMiddleware(
         enableSecurityHeaders = true,
         rateLimitConfig = defaultRateLimitConfig
     } = options;
-    
+
     let composed = handler;
-    
+
     // Add authentication first
     if (enableAuth) {
         composed = withAuth(composed);
     }
-    
+
     // Apply middleware in reverse order (last applied is first executed)
     if (enableSecurityHeaders) {
         composed = withSecurityHeaders(composed);
     }
-    
+
     if (enableCORS) {
         composed = withCORS(composed);
     }
-    
+
     composed = withRequestId(composed);
     composed = withErrorHandling(composed);
     composed = withMetrics(composed);
-    
+
     if (enableLogging) {
         composed = withLogging(composed);
     }
-    
+
     if (enableRateLimit) {
         composed = withRateLimit(rateLimitConfig)(composed);
     }
-    
+
     return composed;
 }
 
 // Export individual middleware functions
-export { 
-    withRateLimit, 
-    withErrorHandling, 
-    withLogging, 
-    withCORS, 
-    withSecurityHeaders, 
-    withRequestId 
+export {
+    withRateLimit,
+    withErrorHandling,
+    withLogging,
+    withCORS,
+    withSecurityHeaders,
+    withRequestId
 };
